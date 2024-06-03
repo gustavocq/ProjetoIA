@@ -1,0 +1,54 @@
+{
+    "genero": [
+        {
+            "codigo": 0,
+            "descricao": "Nao Informado"
+        },
+        {
+            "codigo": 1,
+            "descricao": "Feminino"
+        },
+        {
+            "codigo": 2,
+            "descricao": "Masculino"
+        }
+    ],
+
+    "matriculadoFaculdade": [
+        {
+            "codigo": 0,
+            "descricao": "Nao matriculado"
+        },
+        {
+            "codigo": 1,
+            "descricao": "Curso Meio Periodo"
+        },
+        {
+            "codigo": 2,
+            "descricao": "Curso Tempo Integral"
+        }
+    ],
+
+    "escolaridade": [
+        {
+            "codigo": 1,
+            "descricao": "Escola Fundamental Completo"
+        },
+        {
+            "codigo": 2,
+            "descricao": "Ensino Medio Completo"
+        },
+        {
+            "codigo": 3,
+            "descricao": "Ensino Superior Completo"
+        },
+        {
+            "codigo": 4,
+            "descricao": "Mestrado Completo"
+        },
+        {
+            "codigo": 5,
+            "descricao": "PHD Completo"
+        }
+    ]
+}

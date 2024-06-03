@@ -3,10 +3,10 @@ from pydantic import BaseModel
 class ClasseDeDados(BaseModel):
     id                   : int
     cidade_id            : int
-    genero               : int
+    genero               : str
     experienciaRelevante : bool
-    matriculadoFaculdade : int
-    escolaridade         : int
+    matriculadoFaculdade : str
+    escolaridade         : str
     tempoDeExperiencia   : int
     tempoNoUltimoEmprego : int
     horasDeTreinamento   : int
