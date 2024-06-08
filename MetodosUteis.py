@@ -1,8 +1,10 @@
 import pandas as pd
 from ClasseDeDados import ClasseDeDados
 import json
+from sklearn.linear_model import LogisticRegression
 
 class MetodosUteis:
+
     # Função para carregar dados do arquivo Excel
     def carregarDados(arquivo_xlsx):    
         df = pd.read_excel(arquivo_xlsx)  
@@ -10,7 +12,8 @@ class MetodosUteis:
 
     def preencherClasse(df):
         
-        cont = 0 #Index para desconsiderar cabeçalho
+        cont = 0 
+        cont2 =0
         list = []
 
         # Carregar o JSON contendo os códigos e descrições
@@ -22,23 +25,46 @@ class MetodosUteis:
         codigoMatriculado  = {item['codigo']: item['descricao'] for item in dados['matriculadoFaculdade']}
         codigoEscolaridade = {item['codigo']: item['descricao'] for item in dados['escolaridade']}
 
+        colunasDesejadas = ['escolaridade', 'experienciaRelevante', 'horasDeTreinamento', 'matriculadoFaculdade', 'tempoNoUltimoEmprego']    
+        dfColunasComPeso = separarColunas(df,colunasDesejadas)    
+        modelo = treinarIA(dfColunasComPeso)
 
         # Converter cada linha do DataFrame em uma instância de Perguntas
-        for row in df.iterrows():      
+        for row in df.itertuples(index=False):  
 
-            cont =+ 1
+            dfProbabilidade = [getattr(row, col) for col in colunasDesejadas]
+            probabilidade = modelo.predict_proba([dfProbabilidade])[0][1] * 100
+
+            listaDf = df.iloc[cont]
+            listaDf = pd.DataFrame(listaDf)
+
             list.append(ClasseDeDados(
-                id = row[cont]['id'],
-                cidade_id = row[cont]['cidade_id'],
-                genero = codigoGenero.get(row[cont]['genero']),
-                experienciaRelevante = row[cont]['experienciaRelevante'],
-                matriculadoFaculdade = codigoMatriculado.get(row[cont]['matriculadoFaculdade'], ''),
-                escolaridade = codigoEscolaridade.get(row[cont]['escolaridade'], ''),
-                tempoDeExperiencia = row[cont]['tempoDeExperiencia'],
-                tempoNoUltimoEmprego = row[cont]['tempoNoUltimoEmprego'],
-                horasDeTreinamento = row[cont]['horasDeTreinamento'],
-                ultimoSalario = row[cont]['ultimoSalario']
+                id=row[0],
+				cidade_id=row[1],
+				genero=codigoGenero.get(row[2]),
+				experienciaRelevante=row[3],
+				matriculadoFaculdade=codigoMatriculado.get(row[4], ''),
+				escolaridade=codigoEscolaridade.get(row[5], ''),
+				tempoDeExperiencia=row[6],
+				tempoNoUltimoEmprego=row[7],
+				horasDeTreinamento=row[8],
+				ultimoSalario=row[9],
+				percentualCompatibilidade=round(probabilidade, 2)
+
             ))      
         
         return list
+    
+def treinarIA(dataFrame):
+   
+    target = (dataFrame['escolaridade'] >= 3).astype(int)  # Exemplo de critério, ajuste conforme necessário
+
+    # Treinar o modelo
+    modelo = LogisticRegression()
+    modelo.fit(dataFrame, target)
+
+    return modelo
+
+def separarColunas(dataFrame, colunas_desejadas):
+        return dataFrame[colunas_desejadas]
     
