@@ -11,6 +11,7 @@ class MetodosUteis:
         """Carrega dados do arquivo Excel."""
         try:
             df = pd.read_excel(arquivo_xlsx)
+            df['ultimoSalario'] = df['ultimoSalario'].astype(float)  # Certifique-se de que o salário é float
             return df
         except Exception as e:
             raise FileNotFoundError(f"Erro ao carregar dados do arquivo {arquivo_xlsx}: {e}")
@@ -19,7 +20,7 @@ class MetodosUteis:
     def preencherClasse(df):
         """Preenche a classe de dados com as informações dos candidatos e calcula a compatibilidade."""
         try:
-            list = []
+            lista = []
 
             with open('Banco/codigos.json', 'r') as f:
                 dados = json.load(f)
@@ -36,7 +37,7 @@ class MetodosUteis:
                 dfProbabilidade = [getattr(row, col) for col in colunasDesejadas]
                 probabilidade = modelo.predict_proba([dfProbabilidade])[0][1] * 100
 
-                list.append(ClasseDeDados(
+                lista.append(ClasseDeDados(
                     id=row[0],
                     cidade_id=row[1],
                     genero=codigoGenero.get(row[2], 'Nao Informado'),
@@ -46,11 +47,11 @@ class MetodosUteis:
                     tempoDeExperiencia=row[6],
                     tempoNoUltimoEmprego=row[7],
                     horasDeTreinamento=row[8],
-                    ultimoSalario=row[9],
+                    ultimoSalario=float(row[10]),  # Certifique-se de que o salário é float
                     percentualCompatibilidade=round(probabilidade, 2)
                 ))
 
-            return list
+            return lista
         except NotFittedError:
             raise RuntimeError("O modelo de IA não foi treinado corretamente.")
         except Exception as e:
