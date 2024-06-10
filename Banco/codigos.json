@@ -13,7 +13,6 @@
             "descricao": "Masculino"
         }
     ],
-
     "matriculadoFaculdade": [
         {
             "codigo": 0,
@@ -28,7 +27,6 @@
             "descricao": "Curso Tempo Integral"
         }
     ],
-
     "escolaridade": [
         {
             "codigo": 1,

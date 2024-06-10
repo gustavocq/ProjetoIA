@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from typing import List
 from PerguntasDTO import Perguntas
 from ClasseDeDados import ClasseDeDados
@@ -8,53 +8,61 @@ from MetodosUteis import MetodosUteis
 from datetime import date
 from starlette.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
 
 app = FastAPI()
 
-# Configuração de CORS
+# Configuração de CORS para permitir requisições de qualquer origem
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permite todos os domínios. Modifique para uma lista específica se necessário.
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc)
-    allow_headers=["*"],  # Permite todos os cabeçalhos
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-db_ia = 'Banco/db_ia.xlsx'  # Banco de dados
+db_ia = 'Banco/db_ia.xlsx'
+
 # Carregar banco ao iniciar o programa
 dataFrame = MetodosUteis.carregarDados(db_ia)
 
 @app.post('/selecaoCandidatos', response_model=List[ClasseDeDados])
 def selecaoCandidatos(weights: Perguntas):
-    # Filtrar dados com base nas perguntas
-    dataFrameFiltrado = dataFrame[
-        (dataFrame['escolaridade']         >= weights.escolaridade)         &
-        (dataFrame['experienciaRelevante'] == weights.experienciaRelevante) &
-        (dataFrame['horasDeTreinamento']   >= weights.horasDeTreinamento)   &
-        (dataFrame['matriculadoFaculdade'] >= weights.matriculadoFaculdade) &
-        (dataFrame['tempoNoUltimoEmprego'] >= weights.tempoNoUltimoEmprego)
-    ]  
+    """Filtra e seleciona os candidatos com base nos parâmetros fornecidos."""
+    try:
+        dataFrameFiltrado = dataFrame[
+            (dataFrame['escolaridade'] >= weights.escolaridade) &
+            (dataFrame['experienciaRelevante'] == weights.experienciaRelevante) &
+            (dataFrame['horasDeTreinamento'] >= weights.horasDeTreinamento) &
+            (dataFrame['matriculadoFaculdade'] >= weights.matriculadoFaculdade) &
+            (dataFrame['tempoNoUltimoEmprego'] >= weights.tempoNoUltimoEmprego)
+        ]
 
-    listaCandidatos = MetodosUteis.preencherClasse(dataFrameFiltrado)
-    listaCandidatos = sorted(listaCandidatos, key=lambda x: x.percentualCompatibilidade, reverse=True)
-    listaCandidatos = listaCandidatos[:10]
+        listaCandidatos = MetodosUteis.preencherClasse(dataFrameFiltrado)
+        listaCandidatos = sorted(listaCandidatos, key=lambda x: x.percentualCompatibilidade, reverse=True)
+        listaCandidatos = listaCandidatos[:10]
 
-    return listaCandidatos
+        return listaCandidatos
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post('/baixarSelecaoCandidatos', response_model=List[ClasseDeDados])
+@app.post('/baixarSelecaoCandidatos')
 def baixarSelecaoCandidatos(weights: Perguntas):
-    # Fazer uma chamada para o endpoint selecaoCandidatos
-    dadosSelecao = selecaoCandidatos(weights)
-    nomeRelatorio = f"Download/Relacao_Candidatos_{date.today().strftime('%d.%m.%Y')}.xlsx"
+    """Gera um relatório Excel dos candidatos selecionados com base nos parâmetros fornecidos."""
+    try:
+        dadosSelecao = selecaoCandidatos(weights)
+        nomeRelatorio = f"Download/Relacao_Candidatos_{date.today().strftime('%d.%m.%Y')}.xlsx"
 
-    # Verifica se o arquivo Excel já existe
-    if not os.path.exists(nomeRelatorio):
-        dados_dict = [obj.dict() for obj in dadosSelecao]   
-        df = pd.DataFrame(dados_dict)
-        df.to_excel(nomeRelatorio, index=False)
+        if not os.path.exists(nomeRelatorio):
+            dados_dict = [obj.dict() for obj in dadosSelecao]
+            df = pd.DataFrame(dados_dict)
+            df.to_excel(nomeRelatorio, index=False)
 
-    # Retorna o arquivo Excel como uma resposta de download
-    return FileResponse(nomeRelatorio, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=nomeRelatorio)
+        return FileResponse(nomeRelatorio, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=nomeRelatorio)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == '__main__':
     import uvicorn

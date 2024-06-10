@@ -2,69 +2,75 @@ import pandas as pd
 from ClasseDeDados import ClasseDeDados
 import json
 from sklearn.linear_model import LogisticRegression
+from sklearn.exceptions import NotFittedError
 
 class MetodosUteis:
 
-    # Função para carregar dados do arquivo Excel
+    @staticmethod
     def carregarDados(arquivo_xlsx):    
-        df = pd.read_excel(arquivo_xlsx)  
-        return df
+        """Carrega dados do arquivo Excel."""
+        try:
+            df = pd.read_excel(arquivo_xlsx)
+            return df
+        except Exception as e:
+            raise FileNotFoundError(f"Erro ao carregar dados do arquivo {arquivo_xlsx}: {e}")
 
+    @staticmethod
     def preencherClasse(df):
-        
-        cont = 0 
-        cont2 =0
-        list = []
+        """Preenche a classe de dados com as informações dos candidatos e calcula a compatibilidade."""
+        try:
+            list = []
 
-        # Carregar o JSON contendo os códigos e descrições
-        with open('Banco/codigos.json', 'r') as f:
-            dados = json.load(f)
+            with open('Banco/codigos.json', 'r') as f:
+                dados = json.load(f)
 
-        # Criar dicionários com codigos
-        codigoGenero       = {item['codigo']: item['descricao'] for item in dados['genero']}
-        codigoMatriculado  = {item['codigo']: item['descricao'] for item in dados['matriculadoFaculdade']}
-        codigoEscolaridade = {item['codigo']: item['descricao'] for item in dados['escolaridade']}
+            codigoGenero = {item['codigo']: item['descricao'] for item in dados['genero']}
+            codigoMatriculado = {item['codigo']: item['descricao'] for item in dados['matriculadoFaculdade']}
+            codigoEscolaridade = {item['codigo']: item['descricao'] for item in dados['escolaridade']}
 
-        colunasDesejadas = ['escolaridade', 'experienciaRelevante', 'horasDeTreinamento', 'matriculadoFaculdade', 'tempoNoUltimoEmprego']    
-        dfColunasComPeso = separarColunas(df,colunasDesejadas)    
-        modelo = treinarIA(dfColunasComPeso)
+            colunasDesejadas = ['escolaridade', 'experienciaRelevante', 'horasDeTreinamento', 'matriculadoFaculdade', 'tempoNoUltimoEmprego']
+            dfColunasComPeso = MetodosUteis.separarColunas(df, colunasDesejadas)
+            modelo = MetodosUteis.treinarIA(dfColunasComPeso)
 
-        # Converter cada linha do DataFrame em uma instância de Perguntas
-        for row in df.itertuples(index=False):  
+            for row in df.itertuples(index=False):
+                dfProbabilidade = [getattr(row, col) for col in colunasDesejadas]
+                probabilidade = modelo.predict_proba([dfProbabilidade])[0][1] * 100
 
-            dfProbabilidade = [getattr(row, col) for col in colunasDesejadas]
-            probabilidade = modelo.predict_proba([dfProbabilidade])[0][1] * 100
+                list.append(ClasseDeDados(
+                    id=row[0],
+                    cidade_id=row[1],
+                    genero=codigoGenero.get(row[2], 'Nao Informado'),
+                    experienciaRelevante=row[3],
+                    matriculadoFaculdade=codigoMatriculado.get(row[4], 'Nao matriculado'),
+                    escolaridade=codigoEscolaridade.get(row[5], 'Escola Fundamental Completo'),
+                    tempoDeExperiencia=row[6],
+                    tempoNoUltimoEmprego=row[7],
+                    horasDeTreinamento=row[8],
+                    ultimoSalario=row[9],
+                    percentualCompatibilidade=round(probabilidade, 2)
+                ))
 
-            listaDf = df.iloc[cont]
-            listaDf = pd.DataFrame(listaDf)
+            return list
+        except NotFittedError:
+            raise RuntimeError("O modelo de IA não foi treinado corretamente.")
+        except Exception as e:
+            raise RuntimeError(f"Erro ao preencher dados: {e}")
 
-            list.append(ClasseDeDados(
-                id=row[0],
-				cidade_id=row[1],
-				genero=codigoGenero.get(row[2]),
-				experienciaRelevante=row[3],
-				matriculadoFaculdade=codigoMatriculado.get(row[4], ''),
-				escolaridade=codigoEscolaridade.get(row[5], ''),
-				tempoDeExperiencia=row[6],
-				tempoNoUltimoEmprego=row[7],
-				horasDeTreinamento=row[8],
-				ultimoSalario=row[9],
-				percentualCompatibilidade=round(probabilidade, 2)
+    @staticmethod
+    def treinarIA(dataFrame):
+        """Treina o modelo de IA com os dados fornecidos."""
+        try:
+            target = (dataFrame['escolaridade'] >= 5).astype(int)
+            modelo = LogisticRegression()
+            modelo.fit(dataFrame, target)
+            return modelo
+        except Exception as e:
+            raise RuntimeError(f"Erro ao treinar IA: {e}")
 
-            ))      
-        
-        return list
-    
-def treinarIA(dataFrame):
-   
-    target = (dataFrame['escolaridade'] >= 5).astype(int)  # Exemplo de critério, ajuste conforme necessário
-
-    # Treinar o modelo
-    modelo = LogisticRegression()
-    modelo.fit(dataFrame, target)
-
-    return modelo
-
-def separarColunas(dataFrame, colunas_desejadas):
-        return dataFrame[colunas_desejadas]
-    
+    @staticmethod
+    def separarColunas(dataFrame, colunas_desejadas):
+        """Separa as colunas desejadas do DataFrame."""
+        try:
+            return dataFrame[colunas_desejadas]
+        except KeyError as e:
+            raise ValueError(f"Coluna não encontrada: {e}")
