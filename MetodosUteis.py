@@ -57,7 +57,7 @@ class MetodosUteis:
     
 def treinarIA(dataFrame):
    
-    target = (dataFrame['escolaridade'] >= 3).astype(int)  # Exemplo de critério, ajuste conforme necessário
+    target = (dataFrame['escolaridade'] >= 5).astype(int)  # Exemplo de critério, ajuste conforme necessário
 
     # Treinar o modelo
     modelo = LogisticRegression()

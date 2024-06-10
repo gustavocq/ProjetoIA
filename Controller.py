@@ -7,8 +7,18 @@ from ClasseDeDados import ClasseDeDados
 from MetodosUteis import MetodosUteis
 from datetime import date
 from starlette.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Configuração de CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite todos os domínios. Modifique para uma lista específica se necessário.
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc)
+    allow_headers=["*"],  # Permite todos os cabeçalhos
+)
 
 db_ia = 'Banco/db_ia.xlsx'  # Banco de dados
 # Carregar banco ao iniciar o programa
