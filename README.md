@@ -130,5 +130,5 @@ class Perguntas(BaseModel):
 ## Autor
 
 - **Nome do Autor**: Gustavo Queiroz
-- **Contato**: [Seu Email]
+- **Contato**: gustavocq2013@gmail.com
 ```
