@@ -129,6 +129,6 @@ class Perguntas(BaseModel):
 
 ## Autor
 
-- **Nome do Autor**: Gustavo Queiroz
-- **Contato**: gustavocq2013@gmail.com
+- **Nome dos Autores**: Gustavo Queiroz/Lucas Lacerda
+- **Contato**: gustavocq2013@gmail.com/contatollacerda@gmai.com
 ```
